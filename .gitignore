@@ -1,0 +1,22 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# CanMV / K230 board runtime files
+*.log
+tune.txt
+target.txt
+calib_result.txt
+autostart.strikes
+.autostart_running
+noboot
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

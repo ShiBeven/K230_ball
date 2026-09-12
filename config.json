@@ -1,0 +1,257 @@
+{
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "fps": 60,
+    "pixformat": "RGB565",
+    "hmirror": false,
+    "vflip": false,
+    "_comment_no_exposure_api": "当前固件不支持曝光调节(相关 API 存在但调用抛 NotImplementedError); 曝光控制只能通过物理手段(补光/遮光/光圈)。"
+  },
+  "detector": {
+    "_comment": "检测路线: vision=纯视觉 find_blobs(可选测距) | ai=PipeLine/DetectionApp 神经网络 | hybrid=预留未实现。入口 recipes/detect.py",
+    "mode": "vision"
+  },
+  "ranging": {
+    "_comment": "单目测距(仅 vision 模式)。known=size: 已知尺寸反推距离 | known=distance: 已知距离反推尺寸。shape: square/circle 决定像素径公式。",
+    "enabled": false,
+    "target_size_mm": 25.0,
+    "shape": "square"
+  },
+  "measure": {
+    "_comment": "单目测量配置(recipes/measure.py)。known=size: 已知 target_size_mm 反推距离 | known=distance: 已知 distance_mm 反推尺寸。span=true 时额外测量两色块间距(要求同深度)。",
+    "known": "distance",
+    "target_size_mm": 24.0,
+    "distance_mm": 200.0,
+    "shape": "square",
+    "span": false
+  },
+  "ball_pos": {
+    "_comment": "钢球一维位置检测。tube=导轨 LAB 阈值, ball=球体暗块阈值, spec_l_min=高光 L 下限(镜面球特征, 用于排除阴影)。",
+    "tube": [
+      6,
+      58,
+      -45,
+      -16,
+      -8,
+      42
+    ],
+    "_comment_ball_l_60": "ball 阈值的 L 上限(现场调参值)。改动前请先查看 [TUNE] 页的 ball L / rej L 读数。",
+    "ball": [
+      0,
+      60,
+      -16,
+      22,
+      -18,
+      22
+    ],
+    "_comment_spec_l_55": "spec_l_min 现场调参值。该阈值用于区分球体高光与导轨壁一般亮点。",
+    "spec_l_min": 55,
+    "tube_len_cm": 23.5,
+    "inset_frac": 0.22,
+    "tube_pixels_min": 2000,
+    "_comment_ball_px": "ball_pixels_min: 球体候选块最少像素数。不宜过低, 否则噪声点也会成为候选。",
+    "ball_pixels_min": 12,
+    "_comment_spec_px": "spec_pixels_min: 高光色块最少像素数, 过小容易被噪声误触发。",
+    "spec_pixels_min": 2,
+    "_comment_spec_inside": "require_spec_inside=true: 高光中心须落在候选块内部收缩区域, 排除导轨壁亮边贴框边缘命中的假阳性。",
+    "require_spec_inside": true,
+    "_comment_ball_aspect": "ball_max_aspect: 候选块最大宽高比。球近圆(≈1), 导轨壁为细长条; 该值不宜低于 1.5(球在导轨两端会被 ROI 切边)。",
+    "ball_max_aspect": 2.2,
+    "_comment_inset_x": "inset_x_frac: 搜索 ROI 左右收缩比例, 避开导轨端口切口阴影。光线变暗时应适当增大。",
+    "inset_x_frac": 0.05,
+    "_comment_shape": "形状约束, 用来把摆杆和背景里的绿色杂物分开. 只按'最宽'选会把画面上方的键盘当成绿管(键盘横跨640px比真管更宽, 实测踩过) → 加宽高比和填充率两道卡. 与光照无关, 比调颜色阈值稳. 摆杆640x27约24, 键盘那片约6.6",
+    "tube_min_aspect": 8.0,
+    "tube_min_fill": 0.5,
+    "_comment_band": "可选保险: 只在画面这一纵向区间里找摆杆(比例值, [0.25,0.75]=只看中间一半). 相机固连摆杆后管子纵向位置固定, 开这个能一刀切掉画面上下的背景干扰(如远处桌面/键盘). null=全画面找. 现场若发现黄框跑到画面边缘就填上",
+    "search_band": [
+      0.2,
+      0.8
+    ],
+    "_comment_lock": "tube_lock=true: 相机与导轨刚性固连时锁定一次导轨矩形, 降低每帧检测开销。",
+    "tube_lock": true,
+    "tube_relock_frames": 0,
+    "invert_x": false,
+    "_comment_median": "median_window: 滑动中值滤波窗口(奇数)。1=关闭。窗口越大抖动越小但延迟越高((N-1)/2 帧群延迟)。",
+    "median_window": 3,
+    "_comment_lost": "连续丢球N帧后清空滤波窗口和跳变闸门的锚点. 短暂丢帧不清(中值本来能扛), 但球被拿走还在报旧位置会让电控照着幽灵位置去控. 0=从不清空",
+    "lost_reset_frames": 5,
+    "_comment_gate": "max_jump_cm: 跳变闸门 —— 拦截一帧内不可能的位置突变。",
+    "_comment_gate1": "require_spec: 闸门① —— 候选块必须含镜面高光才可信(排除导轨端口阴影)。",
+    "require_spec": true,
+    "_comment_gate2": "jump_reject_limit: 连续拒绝该次数后强制接受并重新锚定(处理合法大位移)。",
+    "max_jump_cm": 3.0,
+    "jump_reject_limit": 8,
+    "_comment_calib": "offset_cm / scale_correction: 五点标定结果(见 recipes/calib.py)。offset 吸收加性误差, scale 吸收乘性误差。",
+    "_comment_calib_how": "标定方法: 运行 run_calibration.py, 按屏上提示在 5 个刻度采样, 拟合结果抄入本段。",
+    "offset_cm": 0.0,
+    "scale_correction": 1.0,
+    "_comment_fixed_geom": "fixed_geom: 固定标尺模式。相机与导轨刚性固连时, 写死 origin_px 与 px_per_cm 比每帧测量更稳定。",
+    "fixed_geom": {
+      "enabled": false,
+      "_comment_how": "填法: 先设 enabled=false 跑一次, 看终端 [标定常数] 那行, 把 原点px 和 px_per_cm 抄进来, 再设 enabled=true 重新部署. 抄之前确认那次 px_per_cm 是正常值(约24~25)且黄框正确框住管子 —— 这一次锁定会被固化成常数, 锁错了就一直错.",
+      "origin_px": 0.0,
+      "px_per_cm": 0.0,
+      "_comment_check": "体检门限: 启动时仍找一次管子, 若量出的 px_per_cm 与上面写死的差超过这个比例(0.05=5%), 说明相机相对摆杆被碰移位了 → 终端报警提示重标. 只警告不改数(数据要可预测). 0=关闭体检",
+      "geom_check_tol": 0.05
+    },
+    "_comment_warmup": "warmup_frames: 启动预热帧数。摄像头 AE/AWB 收敛期间画面偏色, 丢弃检测结果。",
+    "warmup_frames": 20,
+    "_comment_sequence": "sequence: 序列模式配置。points=目标点序列, tol_cm=到达容差, dwell_frames=停留帧数, leg_timeout_s=单段超时。",
+    "_comment_sequence_arrive": "到达判据: |x−目标|≤tol_cm 且连续 dwell_frames 帧; 丢帧不清零计数(丢帧≠离开)。",
+    "sequence": {
+      "points": [
+        0.0,
+        5.0,
+        -5.0
+      ],
+      "tol_cm": 1.0,
+      "dwell_frames": 15,
+      "leg_timeout_s": 20.0,
+      "autostart": false
+    },
+    "_comment_touch": "touch: 触摸 UI 配置。enabled=false 时使用上次存档目标值, 检测不受影响。",
+    "_comment_touch_map": "touch.map: 触摸坐标 → 画布坐标的仿射映射系数, 需实测标定, 勿按分辨率推算。",
+    "touch": {
+      "enabled": true,
+      "target_min": -11.0,
+      "target_max": 11.0,
+      "read_every_frames": 5,
+      "_comment_map_measured": "触摸映射系数为实测标定值, 勿按分辨率比例推算。",
+      "map": {
+        "kx": 0.987,
+        "bx": 14.6,
+        "ky": 1.1061,
+        "by": -32.5
+      }
+    },
+    "_comment_tune": "tune: 现场阈值调参页。只开放区分球/导轨壁的门限, 防错读开关不提供调参。",
+    "_comment_tune_how": "操作: 点轨道选行 → [−]/[+] 步进 → 自动存盘至 /sdcard/tune.txt。改定后建议抄回 config.json。",
+    "tune": {
+      "enabled": true
+    },
+    "_comment_overlay": "overlay: 画面叠加层(目标标线 + 方向箭头链)开关。",
+    "overlay": {
+      "enabled": true,
+      "zero_line_width": 6,
+      "zero_line_half_len": 95,
+      "arrow_spacing": 22,
+      "arrow_size": 9,
+      "arrow_thickness": 2
+    },
+    "show_fps": true,
+    "_comment_tube_len": "tube_len_cm: 画面中检测到的导轨矩形对应的实际长度(cm), 不是导轨物理全长 —— 相机视野可能裁切两端。",
+    "_comment_relock": "tube_relock_frames: 重新检测导轨的间隔帧数。0=锁定后不重找(相机与导轨刚性固连时推荐)。"
+  },
+  "ai_deploy": {
+    "_comment": "ai 模式读的云平台部署包目录(板上路径), 里面必须有 deploy_config.json 和 kmodel. conf_override 填数字可临时覆盖置信度阈值, null=用部署包里的值",
+    "deploy_dir": "/sdcard/mp_deployment_source",
+    "conf_override": null
+  },
+  "calibration": {
+    "_comment": "相机内参标定结果 @640x480 (棋盘格标定, 重投影误差 0.11px)。换分辨率须按比例换算 fx/fy/cx/cy。",
+    "camera_matrix": [
+      594.9748,
+      0,
+      313.4059,
+      0,
+      595.0857,
+      235.8898,
+      0,
+      0,
+      1
+    ],
+    "distort_coeffs": [
+      0.121484,
+      -0.297663,
+      -8.4e-05,
+      -0.000333,
+      0.0
+    ]
+  },
+  "kpu": {
+    "_comment": "闲置段. AI 路线现走 detector.mode=ai + ai_deploy(PipeLine/DetectionApp); 此段留作将来 AIBase+Ai2d 自建方案备用, 勿删",
+    "enabled": false,
+    "model_path": "models/model.kmodel",
+    "threshold": 0.7,
+    "nms_threshold": 0.45,
+    "labels": [],
+    "anchor_num": 5,
+    "anchors": null
+  },
+  "vision": {
+    "_comment": "纯视觉路线(detector.mode=vision 时用). thresholds 为 LAB 阈值 [L_min,L_max,A_min,A_max,B_min,B_max], 每个对应 labels 一个类别. 现值=蓝块练习实测值, 现场按光照重调(IDE 工具→机器视觉→阈值编辑器)",
+    "enabled": true,
+    "thresholds": [
+      [
+        16,
+        30,
+        2,
+        27,
+        -52,
+        -37
+      ]
+    ],
+    "labels": [
+      "blue_block"
+    ],
+    "pixels_threshold": 100,
+    "area_threshold": 100,
+    "merge": true,
+    "max_blobs": 5
+  },
+  "_comment_video_stream": "video_stream: WiFi 无线图传(MJPEG-over-HTTP), 浏览器直接观看。",
+  "_comment_video_stream_no_thread": "编码同步执行于主循环, 由 every_n_frames 控制频次; 本平台单核分时, 线程化无法降低主循环开销。",
+  "_comment_video_stream_why_not_rtsp": "采用 MJPEG-over-HTTP 而非 RTSP: 浏览器原生支持 MJPEG, 无需客户端; RTSP 需专用播放器。",
+  "_comment_video_stream_cost": "quality / scale / every_n_frames 共同决定图传帧率与带宽占用。",
+  "_comment_video_stream_default": "⚠️默认 enabled=false. 视觉已定版且实测33FPS, 图传是新代码 —— 默认关掉意味着即使它有隐藏问题也碰不到已经拿到手的分. 要用时改true, 重跑 make_installer.py 再部署+按硬件复位键.",
+  "_comment_video_stream_how": "用法: enabled=true 并部署 → 连接热点 → 浏览器打开 http://<ip>:8080/。",
+  "_comment_video_stream_net": "mode=ap: 自建热点(IP 固定); mode=sta: 连接现有网络(IP 由 DHCP 分配)。",
+  "_comment_video_stream_video": "quality=JPEG 质量, scale=缩放比例, every_n_frames=编码抽帧间隔。",
+  "_comment_video_stream_slowbug": "如遇帧率远低于预期, 先对比编码帧数与主循环帧数的比值, 判断是否为抽帧判据问题。",
+  "_comment_video_stream_switch": "推荐 enabled=true + autostart=false: 开机不占算力, 通过屏上 [STREAM] 按钮按需开启。",
+  "video_stream": {
+    "enabled": true,
+    "autostart": false,
+    "net": {
+      "mode": "ap",
+      "ssid": "K230_BALL",
+      "key": "12345678",
+      "sta_wait_s": 10.0
+    },
+    "video": {
+      "quality": 40,
+      "scale": 0.4,
+      "every_n_frames": 3
+    },
+    "http": {
+      "port": 8080,
+      "accept_timeout_ms": 20
+    }
+  },
+  "display": {
+    "_comment": "type: virt=IDE 取景窗 | hdmi=HDMI 输出 | lcd=ST7701 触摸屏(固定 800x480)",
+    "_comment_lcd": "lcd 分辨率固定 800x480(写死于 display.py); 摄像头保持 640x480, 由 Display 缩放上屏。",
+    "enabled": true,
+    "type": "lcd",
+    "width": 640,
+    "height": 480
+  },
+  "serial": {
+    "_comment": "单向发送(视觉 → MCU)。检测到目标时发送 8 字节 ball8 帧; 丢失目标时不发送, 由 MCU 超时判丢。",
+    "_comment_pin": "tx/rx 为 IO 编号(非排针序号)。IO5=UART2_TXD / IO6=UART2_RXD。UART0 为 REPL 控制台, 禁用。",
+    "enabled": true,
+    "uart": 2,
+    "baudrate": 115200,
+    "tx_pin": 5,
+    "rx_pin": 6,
+    "_comment_head_end": "帧头帧尾值(与 MCU 侧协议对齐)。修改后需重新部署。",
+    "head": "0xA5",
+    "end": "0x5A"
+  },
+  "gimbal": {
+    "enabled": false,
+    "protocol": "text",
+    "_comment_protocol": "text: Y:%.4f,P:%.4f\\n | binary: packed float pair"
+  }
+}
